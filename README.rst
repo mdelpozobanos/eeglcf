@@ -17,7 +17,7 @@ channels, time samples and events respectively. Then, LCF can be applied as:
   .. code-block:: python
 
     import eeglcf
-    c_data = eeglcf(b_data, a_data)
+    c_data = eeglcf.lcf(b_data, a_data)
 
 where *c_data* is a new version of the BSS data built from the mixing of
 *b_data* and *a_data*.

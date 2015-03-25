@@ -14,10 +14,10 @@ to EEG data, and *a_data* be an alternative "cleaner" version of the previous.
 Let these variable have dimensions CxTxE, where C, T and E are the number of
 channels, time samples and events respectively. Then, LCF can be applied as:
 
-  .. code-block:: python
+.. code-block:: python
 
-    import eeglcf
-    c_data = eeglcf.lcf(b_data, a_data)
+  import eeglcf
+  c_data = eeglcf.lcf(b_data, a_data)
 
 where *c_data* is a new version of the BSS data built from the mixing of
 *b_data* and *a_data*.
@@ -30,12 +30,12 @@ Installation
 To install this package, you can use the make file. From the root directory of
 the package, run:
 
-  .. code-block:: bash
+.. code-block:: bash
 
-    make install
+  make install
 
-  .. note:: The installation of the dependencies NumPy_ and SciPy_ may fail. It
-    is recommended to install these packages manually.
+.. note:: The installation of the dependencies NumPy_ and SciPy_ may fail. It
+  is recommended to install these packages manually.
 
 -----
 Tests
@@ -44,9 +44,9 @@ Tests
 To test the package against your installed python version, from the root
 directory of the package you can run:
 
-  .. code-block:: bash
+.. code-block:: bash
 
-    make test
+  make test
 
 -------------------
 Issues and comments

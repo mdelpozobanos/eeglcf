@@ -34,7 +34,9 @@ the package, run:
 
   make install
 
-.. note:: The installation of the dependencies NumPy_ and SciPy_ may fail. It
+.. note::
+
+  The installation of the dependencies NumPy_ and SciPy_ may fail. It
   is recommended to install these packages manually.
 
 -----

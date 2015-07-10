@@ -1,12 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-===============================
-eeglcf.py
-===============================
-
-This is the main file from the eeglcf package.
-
+Main module of the *eeglcf* package.
 """
 
 import numpy as np

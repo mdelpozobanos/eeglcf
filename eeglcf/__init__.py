@@ -1,9 +1,6 @@
 """
-===============================
-eeglcf
-===============================
-
-Top module of the *eeglcf* package
+The *eeglcf* package implements an example of the :ref:`lcf` method for EEG
+artefact rejection.
 """
 
 __author__ = 'Marcos DelPozo-Banos'

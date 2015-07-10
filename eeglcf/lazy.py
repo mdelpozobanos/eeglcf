@@ -1,84 +1,12 @@
 # -*- coding: utf-8 -*-
 
 """
-===============================
-lazy.py
-===============================
+This module contains sample functions for some of the steps defined in
+:ref:`step_by_step`
 
-This is a full step-by-step example of how to apply artifact rejection to EEG
-data.
-
- 1. **Filter the data**: Remove uninteresting frequencies, which can
-    potentially carry noise. This usually involves removing some low and high
-    frequencies.
-
- 2. **Check reference channel**: Make sure that the data has a reference
-    channel. Avoid setting a common average reference here. If there is noise
-    within isolated channels, it will spread out to clean sensors with common
-    average reference. You can re-reference to whatever reference you are
-    interested in after the cleaning process.
-
- 3. **Remove the baseline**, i.e. remove the voltage average: Consider the
-    rejection of outliers from the computation of the baseline/average, e.g.
-    ignoring voltages with a z-score higher than 3.
-
- 4. **Reject noisy EEG channels**: Channels that contain mainly noise will
-    affect the performance of the BSS algorithm. Keep the list of rejected
-    channels, so that you can interpolate them back into the data when the EEG
-    is clean.
-
- 5. **Reject noisy EEG trials**: Trials that contain mainly noise will affect
-    the performance of the BSS algorithm. You will have to compromise here
-    between feeding the BSS algorithm with clean data and retaining as much
-    trials as possible.
-
- 6. **Apply the BSS algorithm**: Project the data from EEG space to BSS space.
-
- 7. **Identify artifactual components**: There are multiple approaches in the
-    literature. `ADJUST`_ [Mognon2010]_ and `FASTER`_ [Nolan2010]_ are two
-    examples.
-
- 8. **Process artifactual components**: In many cases, artifactual components
-    are entirely rejected instead of processed. This is equivalent to set these
-    components to all 0s.
-
- 9. **Apply LCF**: Feed the LCF with the original components (computed in step
-    6) and the processed components (computed in step 8, if any) corresponding
-    to artifactual components (as detected in step 7).
-
-10. **Apply the BSS^{-1} algorithm**: Back-project the data from the BSS space
-    to the EEG space. This is applied over the set of clean components (not
-    detected as artifactual in step 7) and the LCF-processed components (the
-    result of step 9).
-
-11. **Remove baseline**. The baseline can be offset by the BSS processing. It
-    is recommended to re-remove the baseline to correct it.
-
-12. **Reject channels inside events**: Analyze channels within each event to
-    reject and interpolate those that are still too noisy. Note that the
-    interpolation is also applied within individual events.
-
-13. **Interpolate channels**: Interpolated channels rejected in step 4 back
-    into the data.
-
-The EEG is now clean. You may now apply any further processing methods, such as
-changing the reference to common average.
-
-The method *eeg_art_rej* is an example implementation of the above process.
-
-References
-----------
-[Mognon2010] A. Mognon, Jovicich J., Bruzzone L., and Buiatti M. Adjust: An
-    automatic eeg artifact detector based on the joint use of spatial and
-    temporal features. Psychophysiology, pages 229-240, July 2010.
-[Nolan2010] H. Nolan, R. Whelan, and R.B. Reilly. Faster: Fully automated
-    statistical thresholding for eeg artifact rejection. Journal of
-    Neuroscience Methods, 192(1):152-162, 2010.
-.. _ADJUST: https://github.com/mdelpozobanos/eegadjust
-.. _FASTER: https://github.com/mdelpozobanos/eegfaster
+.. _FastICA: http://scikit-learn.org/stable/modules/generated/sklearn.decomposition.FastICA.html
 
 """
-# TODO: Complete the above introduction
 
 import copy
 from eeglcf import lcf
@@ -86,8 +14,6 @@ import numpy as np
 import scipy.signal as sp_signal
 from eeglcf import mixnp
 from sklearn.decomposition import FastICA
-
-import pdb
 
 # Dimension variables are defined globally to facilitate the interpretation of
 # the code
@@ -98,22 +24,17 @@ ev_dim = 2
 
 def noisy_ch(eeg_data, ref_ch=None):
     """
+    Identify noisy channels based on the following scores:
 
-    Scores used to identify noisy channels:
+    1. **Correlation score (r)**: Clean EEG signals are highly correlation
+       across channels. Therefore, a noise descriptor for a channels might be a
+       low average correlation with other channels.
 
-     1. Correlation score (r): Clean EEG signals are highly correlation across
-        channels. Therefore, a noise descriptor for a channels might be a low
-        average correlation with other channels.
+    2. **Variance score (v)**: Extremely high event-average time-variances are
+       also indicators of noise.
 
-     2. Variance score (v): Extremely high event-average time-variances are
-        also indicators of noise.
-
-     3. Hurst score (h): Clean EEG signals has very specific Hurst exponent
-        values. Deviations from this point are also noise indicators.
-
-    When the reference channel is specified in the calling instance, the first
-    two scores are corrected for the quadratic effect of the distance to this
-    reference channel.
+    3. **Hurst score (h)**: Clean EEG signals has very specific Hurst exponent
+       values. Deviations from this point are also noise indicators.
 
     Outliers are labeled as noisy channels. They are detected based on the
     z-score of each of the above measurements (z-score > 3).
@@ -121,9 +42,20 @@ def noisy_ch(eeg_data, ref_ch=None):
     Parameters
     ----------
     eeg_data : array
+        EEG data in a CxTxE array. With C the number of channels, T the number
+        of time samples and E the number of events.
+    ref_ch : int, None
+        Index of the reference channel.
 
+    Returns
+    -------
+    noisy_ch : list
+        List with the index of the channel identified as noisy.
     """
-    # TODO: Write help
+    # TODO: Distance to reference channel
+    # When the reference channel is specified in the calling instance, the
+    # first two scores are corrected for the quadratic effect of the distance
+    # to this reference channel.
 
     # Dimension shapes
     ch_len = eeg_data.shape[ch_dim]
@@ -177,23 +109,26 @@ def noisy_ch(eeg_data, ref_ch=None):
 
 def noisy_ev(eeg_data):
     """
-    Computes events scores for artifact detection.
+    Indentify noisy events based on the scores:
 
-    EEG artifactual events are identified based on three scores:
-    1. Range score (r): Clean EEG signals have a voltage range within some specific limits. Ranges off these limits
-        are a signal of noise presence.
-    2. Deviation score (d): High deviations of voltage from the average value are also noise indicators.
-    3. Variance score (v):  Extremely high voltage variances are also indicators of noise.
+    1. **Range score (r)**: Clean EEG signals have a voltage range within some
+       specific limits. Ranges off these limits are a signal of noise presence.
+    2. **Deviation score (d)**: High deviations of voltage from the average
+       value are also noise indicators.
+    3. **Variance score (v)**:  Extremely high voltage variances are also
+       indicators of noise.
 
-    Keys:
-    -----
-    eeg_data : <"bp.EEG">
-        EEG data with only EEG channels
+    Parameters
+    ----------
+    eeg_data : array
+        EEG data in a CxTxE array. With C the number of channels, T the number
+        of time samples and E the number of events.
 
-    Returns:
-    --------
-    coefs : <"dict">
-        Dictionary with the resulting <"np.ndarray"> scores 'r', 'd' and 'v', each of length #events.
+    Returns
+    -------
+    coefs : dict
+        Dictionary with the resulting scores arrays 'r', 'd' and 'v', each of
+        length #events.
     """
 
     # -------------------------------------------------------------------------
@@ -223,7 +158,24 @@ def noisy_ev(eeg_data):
     return np.where(r_outliers | d_outliers | v_outliers)
 
 
-def _ica(eeg_data):
+def fastica(eeg_data):
+    """
+    Sample function to apply `FastICA`_ to the EEG data.
+
+    Parameters
+    ----------
+    eeg_data : array
+        EEG data in a CxTxE array. With C the number of channels, T the number
+        of time samples and E the number of events.
+
+    Returns
+    -------
+    ica : ICA object
+        Trained `FastICA`_ object.
+    ica_data : array
+        EEG projected data in a CxTxE array. With C the number of components, T
+        the number of time samples and E the number of events.
+    """
 
     # Dimension shapes
     ch_len = eeg_data.shape[ch_dim]
@@ -266,15 +218,33 @@ def _ica(eeg_data):
     return ica, bss_data
 
 
-def _invica(ica, bss_data):
+def inv_fastica(ica, ica_data):
+    """
+    Sample function to apply the inverse transform of `FastICA`_ to the
+    projected data.
+
+    Parameters
+    ----------
+    ica : ICA object
+        Trained `FastICA`_ object.
+    ica_data : array
+        EEG projected data in a CxTxE array. With C the number of components, T
+        the number of time samples and E the number of events.
+
+    Returns
+    -------
+    eeg_data : array
+        Back-projected EEG data in a CxTxE array. With C the number of
+        channels, T the number of time samples and E the number of events.
+    """
 
     # Dimension shapes
-    ic_len = bss_data.shape[ch_dim]
-    t_len = bss_data.shape[t_dim]
-    ev_len = bss_data.shape[ev_dim]
+    ic_len = ica_data.shape[ch_dim]
+    t_len = ica_data.shape[t_dim]
+    ev_len = ica_data.shape[ev_dim]
 
     # We need to collapse time and events dimensions
-    coll_data = bss_data.transpose([t_dim, ev_dim, ch_dim])\
+    coll_data = ica_data.transpose([t_dim, ev_dim, ch_dim])\
         .reshape([t_len*ev_len, ic_len])
 
     # Project back to the EEG space
@@ -296,7 +266,79 @@ def _invica(ica, bss_data):
 def artifact_rejection_with_lcf(eeg_data, fs,
             freq=(0.5, None),
             ref_ch=None, eeg_ch=None):
-    # TODO: Write help
+    """
+    Example function covering the steps defined in :ref:`step_by_step`.
+
+    1. **Filter the data**: FIR filters are applied within the specified range
+       (*freq*).
+
+    2. **Check reference channel**: Re-reference the data to the specified
+       channel (*ref_ch*).
+
+    3. **Remove the baseline**: Baseline is computed using function
+       :func:`eeglcf.mixnp.zscore_outliers`, which ignores outliers.
+
+    4. **Reject noisy EEG channels**: Channel rejected using sample function
+       :func:`eeglcf.lazy.noisy_ch`.
+
+    5. **Reject noisy EEG trials**: Trial rejected using sample function
+       :func:`eeglcf.lazy.noisy_ev`.
+
+    6. **Apply the BSS algorithm**: `FastICA`_ algorithm is applied as the BSS
+       technique, via the sample function :func:`eeglcf.lazy.fastica`.
+
+    7. **Identify artifactual components**: In this case, we do not apply this
+       step. Hence, the architecture corresponds to the application of the LCF
+       method by itself.
+
+    8. **Process artifactual components**: All 0s components are used as
+       alternative components.
+
+    9. **Apply LCF**: This is:
+
+       .. code-block:: python
+
+         c_data = eeglcf.lcf(b_data, a_data)
+
+       where *b_data* is a numpy.ndarray containing the result of applying a BSS method
+       to EEG data, and *a_data* is an alternative "cleaner" version of the previous.
+       Both variable have dimensions CxTxE, where C, T and E are the number of
+       channels, time samples and events respectively.
+
+    10. **Apply the BSS^{-1} algorithm**: Back-project `FastICA`_ via the
+        sample function :func:`eeglcf.lazy.inv_fastica`.
+
+    11. **Remove baseline**. Baseline is computed using function
+       :func:`eeglcf.mixnp.zscore_outliers`, which ignores outliers.
+
+    12. **Reject channels inside events**: Not coded.
+
+    13. **Interpolate channels**: Not coded.
+
+    Parameters
+    ----------
+    eeg_data : array
+        EEG data.
+    fs : float
+        EEG sampling frequency.
+    freq : tuple
+        Tuple with the lower and higher cut-off frequencies respectively. If
+        freq[0] is None, no high-pass filter is applied. If freq[1] is None, no
+        low-pass filter is applied.
+    ref_ch : int, None
+        Index of the EEG reference channel. If None, the EEG will be
+        re-referenced to channel 0.
+    eeg_ch : list, None
+        List of the channel indices corresponding to EEG signals (i.e.
+        excluding EOG, EMG, ...). If None, all channels will be considered EEG
+        channels.
+
+    Returns
+    -------
+    res : array
+        Clean EEG data
+
+    """
 
     # Set the dimensions of eeg_data
     ch_dim = 0
@@ -397,7 +439,7 @@ def artifact_rejection_with_lcf(eeg_data, fs,
     # -------------------------------------------------------------------------
     # 6. Apply the BSS algorithm
 
-    ica, comp = _ica(ev_data)
+    ica, comp = fastica(ev_data)
 
     # -------------------------------------------------------------------------
     # 7. Apply the artifactual component detection and processing algorithm
@@ -424,7 +466,7 @@ def artifact_rejection_with_lcf(eeg_data, fs,
     # -------------------------------------------------------------------------
     # 9. Back-project to the original space
 
-    rc_data = _invica(ica, lcf_comp)
+    rc_data = inv_fastica(ica, lcf_comp)
 
     # -------------------------------------------------------------------------
     # 10. Remove baseline

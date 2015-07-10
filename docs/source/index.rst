@@ -1,6 +1,8 @@
 .. include:: ../../README.rst
 
-.. include:: description.rst
+.. include:: lcf.rst
+
+.. include:: step_by_step.rst
 
 ===
 API

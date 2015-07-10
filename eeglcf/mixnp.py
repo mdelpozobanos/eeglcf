@@ -1,9 +1,8 @@
-"""
-=======
-np.py
-=======
+# -*- coding: utf-8 -*-
 
-This module contains tools related to the numpy library.
+"""
+This module contains some tools, related to the numpy library, that are used
+throughout the eeglcf package.
 """
 
 import numpy as np
@@ -14,20 +13,20 @@ def pearson(x, y=None):
 
     r = sum((X - Mx)(Y - My)) / sqrt(SSx*SSy)
 
-    Keys:
-    -----
-    x : <"np.ndarray">
+    Parameters
+    ----------
+    x : array
         If vector : Single data vector.
         If matrix : Matrix of shape L x N, where L is the length of the data and N the number of vectors.
-    y : <"np.ndarray">, optional
+    y : array, optional
         If specified, the correlation between each vector of x and each vector of y will be returned. Otherwise, the
         auto-correlation matrix of x will be returned.
         If vector : Single data vector.
         If matrix : Matrix of shape L x N, where L is the length of the data and N the number of vectors.
 
-    Results:
-    --------
-    r : <"np.ndarray">
+    Returns
+    -------
+    r : array
         Result
 
     """
@@ -81,14 +80,14 @@ def pearson(x, y=None):
 def hurst(x):
     """FASTER [1] implementation of the Hurst Exponent.
 
-    Keys:
-    -----
-    x : <"np.ndarray">
+    Parameters
+    ----------
+    x : array
         Vector with the data sequence.
 
-    Returns:
-    --------
-    h : <"float">
+    Returns
+    -------
+    h : float
         Compute hurst exponent
 
     [1] H. Nolan, R. Whelan, and R.B. Reilly. Faster: Fully automated statistical thresholding for eeg artifact
@@ -146,9 +145,9 @@ def zscore_outliers(x, axis=None, keep_dims=False):
     ----------
     x : array
         Data array.
-    axis : int
+    axis : int, None, optional
         Axis of application.
-    keep_dims : bool
+    keep_dims : bool, optional
         If True, the returned mean and std results will have the same number of
         dimensions as x.
 
@@ -161,7 +160,6 @@ def zscore_outliers(x, axis=None, keep_dims=False):
     s : array
         Standard deviation of x, computed without considering the outliers.
     """
-    # TODO: Complete the above help
 
     # Mask values with z-score greater than 3
     mx = np.ma.masked_array(x)

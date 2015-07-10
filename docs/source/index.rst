@@ -1,13 +1,6 @@
 .. include:: ../../README.rst
 
-====================
-Detailed description
-====================
-
-.. toctree::
-   :maxdepth: 2
-
-   description
+.. include:: description.rst
 
 ===
 API

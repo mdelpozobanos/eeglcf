@@ -11,7 +11,6 @@ import pytest
 import numpy as np
 from eeglcf import eeglcf
 
-
 # =============================================================================
 # VARIABLES
 
@@ -286,7 +285,7 @@ class TestLCF:
                          comp1=comps, comp0=comps)
 
     def test_dilator_width(self, comps):
-        """*dilator_width* must be an integer > 0"""
+        """*dilator_width* must be an integer >= 0"""
         _test_parameters(eeglcf.lcf, 'dilator_width',
                          comp1=comps, comp0=comps)
 
@@ -368,10 +367,12 @@ def _test_parameters(fcn, key, *args, **kwargs):
             res = fcn(integrator_width='error', *args, **kwargs)
             if fcn is eeglcf._chk_parameters and res is not None:
                 raise res
-        with pytest.raises(ValueError):
-            res = fcn(integrator_width=0, *args, **kwargs)
-            if fcn is eeglcf._chk_parameters and res is not None:
-                raise res
+        # [NOTE] A integrator_width=0 is now supported
+        # with pytest.raises(ValueError):
+        #     res = fcn(integrator_width=0, *args, **kwargs)
+        #     if fcn is eeglcf._chk_parameters and res is not None:
+        #         raise res
+        # [END NOTE]
         with pytest.raises(ValueError):
             res = fcn(integrator_width=-2, *args, **kwargs)
             if fcn is eeglcf._chk_parameters and res is not None:

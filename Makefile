@@ -50,9 +50,9 @@ coverage:
 	open htmlcov/index.html
 
 docs:
-	rm -f docs/eeglcf.rst
-	rm -f docs/modules.rst
-	sphinx-apidoc -fMo docs/source eeglcf
+	rm -f docs/source/eeglcf.rst
+	rm -f docs/source/modules.rst
+	sphinx-apidoc -fo docs/source eeglcf
 	$(MAKE) -C docs clean
 	$(MAKE) -C docs html
 	open docs/build/html/index.html

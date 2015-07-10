@@ -18,52 +18,6 @@ _t_dim = 1  # Time dimension
 _ev_dim = 2  # Events dimension
 
 
-def lcf(comp0, comp1=None,
-        integrator_width=20, detection_th=1.,
-        dilator_width=10, transition_width=10):
-    """
-    Localized Component Filtering
-
-    Detects the location of artifacts in the time representation of source
-    components and mixes them with an alternative (cleaned) version.
-
-    Parameters
-    ----------
-    comp0 : array
-        Array containing the original components, which will be analysed in
-        search of noise. It must be a 3D array with shape CxTxE, where C, T and
-        E are the number of components, time samples and recorded events
-        respectively.
-    comp1 : array, optional
-        Array containing the alternative (cleaned) components. It must have
-        the same shape as *comp0*. If not specified, an all 0s alternative
-        components will be used (this is equivalent to component rejection).
-    integrator_width : int > 0, optional
-        Width (in number of samples) of the integration
-    detection_th : float > 0, optional
-        Detection threshold
-    dilator_width : int > 0, optional
-        Width (in number of samples) of the dilator
-    transition_width : int > 0, optional
-        Width (in number of samples) of the transition window
-
-    Returns
-    -------
-    comp2 : array
-        Array with the resulting components. This will have the same shape
-        as *comp0*.
-    """
-
-    # 1. Compute features
-    features = _features(comp0)
-    # 2. Integrate features
-    integrated_features = _integrate(integrator_width, *features)
-    # 3. Classify features
-    ctr_signal = _classify(detection_th, dilator_width, *integrated_features)
-    # 4. Mix components
-    return _mix(transition_width, comp0, ctr_signal, comp1)
-
-
 def _chk_parameters(comp0=None, comp1=None,
                     integrator_width=None, detection_th=None,
                     dilator_width=None, transition_width=None):
@@ -116,8 +70,8 @@ def _chk_parameters(comp0=None, comp1=None,
             return TypeError('integrator_width must be {}; '
                              'is {} instead'
                              .format(type(1), type(integrator_width)))
-        if not integrator_width > 0:
-            return ValueError('integrator_width must be > 0')
+        if not integrator_width >= 0:
+            return ValueError('integrator_width must be >= 0')
 
     # Check detection_th
     if detection_th is not None:
@@ -193,7 +147,7 @@ def _features(comp0):
         masked_x = np.ma.array(x, mask=np.abs((x - m) / s) > 3)
         del m, s
         # Recompute mean and std. As for now, masked arrays don't support
-        # a tuple of axes. Hence, the array has to be reshaped.
+        # a tuple of names. Hence, the array has to be reshaped.
         # assert(_comp_dim is 0)
         masked_x = masked_x.reshape([masked_x.shape[0],
                                      np.prod(masked_x.shape[1:])])
@@ -239,9 +193,10 @@ def _integrate(integrator_width, *args, **kwargs):
 
     Parameters
     ----------
-    integrator_width : int > 0
-        Width (in number of samples) of the integration
-    feats : {keyworded: tuple of numpy.ndarray, non-keyworded: numpy.ndarray}
+    integrator_width : int >= 0
+        Width (in number of samples) of the integration. If 0, no integration
+        will be done.
+    <feats> : {keyworded: tuple of numpy.ndarray, non-keyworded: numpy.ndarray}
         Features to be integrated can be passed as non-keyworded arguments in
         the shape of arrays or as a keyworded argument *feats* in the shape of
         a tuple of arrays.
@@ -256,7 +211,8 @@ def _integrate(integrator_width, *args, **kwargs):
         features
     """
 
-    if len(args) > 0:
+    # Find feats variable
+    if len(args) > 0:  # Non-keyworded features
         feats = args
         if 'feats' in kwargs:
             raise KeyError('_integrate() got multiple feature definitions. '
@@ -265,7 +221,7 @@ def _integrate(integrator_width, *args, **kwargs):
         if len(kwargs) is not 0:
             raise KeyError('_integrate() got unexpected keyword arguments {}'
                            .format(kwargs.keys()))
-    elif 'feats' in kwargs:
+    elif 'feats' in kwargs:  # Key-worded features
         if not isinstance(kwargs['feats'], tuple):
             raise TypeError('feats keyword must be {}; is {} instead'
                             .format(type(tuple()), type(kwargs['feats'])))
@@ -283,6 +239,10 @@ def _integrate(integrator_width, *args, **kwargs):
     if not isinstance(integrator_width, int):
         # Generate the error from _chk_parameters for consistency
         raise _chk_parameters(integrator_width=integrator_width)
+
+    # Check integrator_width for special values
+    if integrator_width == 0:
+        return feats
 
     # Allocate integrated features
     integrated_feats = []
@@ -542,3 +502,61 @@ def _mix(transition_width, comp0, ctrl_signal, comp1):
         return mix_data + comp1*transition_ctrl
     except ValueError:
         raise _chk_parameters(comp0=comp0, comp1=comp1)
+
+
+def lcf(comp0, comp1=None,
+        integrator_width=20, detection_th=1.,
+        dilator_width=10, transition_width=10,
+        features_fcn=_features,
+        classify_fcn=_classify):
+    """
+    Localized Component Filtering
+
+    Detects the location of artifacts in the time representation of source
+    components and mixes them with an alternative (cleaned) version.
+
+    Parameters
+    ----------
+    comp0 : array
+        Array containing the original components, which will be analysed in
+        search of noise. It must be a 3D array with shape CxTxE, where C, T and
+        E are the number of components, time samples and recorded events
+        respectively.
+    comp1 : array, optional
+        Array containing the alternative (cleaned) components. It must have
+        the same shape as *comp0*. If not specified, an all 0s alternative
+        components will be used (this is equivalent to component rejection).
+    integrator_width : int >= 0, optional
+        Width (in number of samples) of the integration
+    detection_th : float > 0, optional
+        Detection threshold
+    dilator_width : int > 0, optional
+        Width (in number of samples) of the dilator
+    transition_width : int > 0, optional
+        Width (in number of samples) of the transition window
+    features_fcn : function, optional
+        Function computing the instantaneous features from the components. It
+        is called as *features_fcn(comp0)*. It must return a tuple of arrays
+        with the same shape as *comp0*.
+        If not specified, the normalized voltage and the normalized time
+        derivative will be computed.
+    classify_fcn : function, optional
+
+    Returns
+    -------
+    comp2 : array
+        Array with the resulting components. This will have the same shape
+        as *comp0*.
+    """
+
+    # 1. Compute features
+    features = features_fcn(comp0)
+    # 2. Integrate features
+    integrated_features = _integrate(integrator_width, *features)
+    # 3. Classify features
+    if classify_fcn is _classify:
+        ctr_signal = classify_fcn(detection_th, dilator_width, *integrated_features)
+    else:
+        ctr_signal = classify_fcn(*integrated_features)
+    # 4. Mix components
+    return _mix(transition_width, comp0, ctr_signal, comp1)

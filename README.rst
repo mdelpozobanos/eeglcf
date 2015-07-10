@@ -9,6 +9,8 @@ artifact rejection.
 Code Example
 ------------
 
+A detail description of the LCF algorithm can be found in :ref:`lcf`.
+
 Let *b_data* be a numpy.ndarray containing the result of applying a BSS method
 to EEG data, and *a_data* be an alternative "cleaner" version of the previous.
 Let these variable have dimensions CxTxE, where C, T and E are the number of

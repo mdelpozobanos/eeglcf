@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/../../Code/Python/Blackboard/LCF paper/.idea/LCF paper.iml" filepath="$PROJECT_DIR$/../../Code/Python/Blackboard/LCF paper/.idea/LCF paper.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../../Code/Python/MyModules/biopy/.idea/biopy.iml" filepath="$PROJECT_DIR$/../../Code/Python/MyModules/biopy/.idea/biopy.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/eeglcf.iml" filepath="$PROJECT_DIR$/.idea/eeglcf.iml" />
+    </modules>
+  </component>
+</project>

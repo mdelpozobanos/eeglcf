@@ -1,9 +1,13 @@
 =======================================
-eeglcf: Readme
+eeglcf
 =======================================
 
 This package implements the Localized Component Filtering (LCF) method for EEG
-artifact rejection.
+artifact rejection:
+
+DelPozo‐Baños, M., & Weidemann, C. T. (2017). Localized component filtering for 
+electroencephalogram artifact rejection. Psychophysiology, 54(4), 608-619.
+DOI: [10.1111/psyp.12810](https://doi.org/10.1111/psyp.12810)
 
 ------------
 Code Example

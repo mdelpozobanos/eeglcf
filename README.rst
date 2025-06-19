@@ -1,13 +1,17 @@
-# eeglcf
+=======================================
+eeglcf
+=======================================
 
 This package implements the Localized Component Filtering (LCF) method for EEG
 artifact rejection:
 
 DelPozo‐Baños, M., & Weidemann, C. T. (2017). Localized component filtering for 
 electroencephalogram artifact rejection. Psychophysiology, 54(4), 608-619.
-DOI: [10.1111/psyp.12810](https://doi.org/10.1111/psyp.12810)
+DOI: `10.1111/psyp.12810 <https://doi.org/10.1111/psyp.12810>`_
 
-## Code Example
+------------
+Code Example
+------------
 
 Let *b_data* be a numpy.ndarray containing the result of applying a BSS method
 to EEG data, and *a_data* be an alternative "cleaner" version of the previous.
@@ -23,7 +27,9 @@ where *c_data* is a new version of the BSS data built from the mixing of
 *b_data* and *a_data*.
 
 
-## Installation
+------------
+Installation
+------------
 
 To install this package, you can use the make file. From the root directory of
 the package, run:
@@ -37,7 +43,9 @@ the package, run:
   The installation of the dependencies NumPy_ and SciPy_ may fail. It
   is recommended to install these packages manually.
 
-## Tests
+-----
+Tests
+-----
 
 To test the package against your installed python version, from the root
 directory of the package you can run:
@@ -46,12 +54,16 @@ directory of the package you can run:
 
   make test
 
-## Issues and comments
+-------------------
+Issues and comments
+-------------------
 
 Please, `file an issue`_ if you encounter any problem with the package or if
 you have any suggestions.
 
-# License
+=======
+License
+=======
 
 The eeglcf framework is open-sourced software licensed
 under the `MIT license <http://opensource.org/licenses/MIT>`_.
